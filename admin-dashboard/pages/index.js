@@ -10,31 +10,37 @@ export default function Login() {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
 
-  async function handleLogin(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const res = await axios.post('http://localhost:5000/api/admin/login', {
-        email,
-        mot_de_passe: password,
-      });
-      if (res.data.success) {
-        Cookies.set('admin_user', JSON.stringify(res.data.data), { expires: 1 });
-        router.push('/dashboard');
-      } else {
-        setError('Email ou mot de passe incorrect');
-      }
-    } catch (err) {
-      if (err.response?.status === 401) {
-        setError('Email ou mot de passe incorrect');
-      } else {
-        setError('Impossible de contacter le serveur.');
-      }
-    } finally {
-      setLoading(false);
+  function validatePassword(pwd) {
+  if (pwd.length < 8) return 'Minimum 8 caractères requis';
+  if (!/[a-z]/.test(pwd)) return 'Au moins 1 lettre minuscule requise';
+  if (!/[A-Z]/.test(pwd)) return 'Au moins 1 lettre majuscule requise';
+  if (!/[0-9]/.test(pwd)) return 'Au moins 1 chiffre requis';
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd))
+    return 'Au moins 1 caractère spécial requis (!@#$%...)';
+  return null;
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+  try {
+    const res = await axios.post('http://192.168.100.218:5000/api/admin/login', {
+      email,
+      mot_de_passe: password,
+    });
+    if (res.data.success) {
+      Cookies.set('admin_user', JSON.stringify(res.data.data), { expires: 1 });
+      router.push('/dashboard');
+    } else {
+      setError('Email ou mot de passe incorrect');
     }
+  } catch (err) {
+    setError('Email ou mot de passe incorrect');
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -65,6 +71,8 @@ export default function Login() {
               required
               style={{ width: '100%', border: '1px solid #D1D5DB', borderRadius: '8px', padding: '12px 14px', fontSize: '14px', color: '#111827', backgroundColor: '#ffffff', boxSizing: 'border-box', outline: 'none' }}
             />
+            {/* Règles mot de passe */}
+
           </div>
 
           <div style={{ marginBottom: '16px' }}>
@@ -79,6 +87,7 @@ export default function Login() {
               required
               style={{ width: '100%', border: '1px solid #D1D5DB', borderRadius: '8px', padding: '12px 14px', fontSize: '14px', color: '#111827', backgroundColor: '#ffffff', boxSizing: 'border-box', outline: 'none' }}
             />
+            
           </div>
 
           {error && (

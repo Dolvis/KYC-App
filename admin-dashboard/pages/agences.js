@@ -81,7 +81,7 @@ export default function Agences() {
       </div>
 
       {modal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40  text-gray-800 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <h2 className="font-semibold text-gray-800 mb-4">
               {editing ? 'Modifier agence' : 'Nouvelle agence'}

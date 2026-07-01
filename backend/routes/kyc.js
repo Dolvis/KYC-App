@@ -1,7 +1,8 @@
-const express = require('express');
-const router  = express.Router();
-const multer  = require('multer');
-const db      = require('../db');
+const express  = require('express');
+const router   = express.Router();
+const multer   = require('multer');
+const db       = require('../db');
+const { validatePassword } = require('../utils/passwordValidator');
 
 const storage = multer.diskStorage({
   destination: 'uploads/',
@@ -14,28 +15,43 @@ function genNumero() {
   return 'KYC-' + Date.now().toString().slice(-8);
 }
 
-// Login
+// ─── LOGIN AGENT (mobile) ─────────────────────────────
 router.post('/login', async (req, res) => {
   try {
     const { email, mot_de_passe } = req.body;
+
+    if (!email || !mot_de_passe) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email et mot de passe requis'
+      });
+    }
+
     const [rows] = await db.query(
       `SELECT u.*, a.nom AS agence_nom
-       FROM utilisateurs u
+       FROM users u
        LEFT JOIN agences a ON u.agence_id = a.id
-       WHERE u.email = ? AND u.mot_de_passe = ?`,
+       WHERE u.email = ? AND u.mot_de_passe = ? AND u.role = 'agent' AND u.actif = TRUE`,
       [email, mot_de_passe]
     );
-    if (!rows.length)
-      return res.status(401).json({ success: false, message: 'Identifiants incorrects' });
+
+    if (!rows.length) {
+      return res.status(401).json({
+        success: false,
+        message: 'Identifiants incorrects ou accès non autorisé'
+      });
+    }
+
     const user = rows[0];
     delete user.mot_de_passe;
+
     res.json({ success: true, data: user });
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
   }
 });
 
-// Agences
+// ─── AGENCES ──────────────────────────────────────────
 router.get('/agences', async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM agences ORDER BY nom');
@@ -45,7 +61,7 @@ router.get('/agences', async (req, res) => {
   }
 });
 
-// Liste clients + recherche
+// ─── CLIENTS : liste + recherche ──────────────────────
 router.get('/clients', async (req, res) => {
   try {
     const { search, agence_id } = req.query;
@@ -59,10 +75,7 @@ router.get('/clients', async (req, res) => {
       const like = `%${search}%`;
       params.push(like, like, like);
     }
-    if (agence_id) {
-      sql += ` AND c.agence_id = ?`;
-      params.push(agence_id);
-    }
+    if (agence_id) { sql += ` AND c.agence_id = ?`; params.push(agence_id); }
     sql += ` ORDER BY c.cree_le DESC`;
     const [rows] = await db.query(sql, params);
     res.json({ success: true, data: rows });
@@ -71,7 +84,7 @@ router.get('/clients', async (req, res) => {
   }
 });
 
-// Détail client
+// ─── CLIENT : detail ──────────────────────────────────
 router.get('/clients/:id', async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -89,7 +102,7 @@ router.get('/clients/:id', async (req, res) => {
   }
 });
 
-// Créer client
+// ─── CLIENT : creer ───────────────────────────────────
 router.post('/clients',
   upload.fields([
     { name: 'document_recto', maxCount: 1 },
@@ -125,7 +138,7 @@ router.post('/clients',
   }
 );
 
-// Modifier client
+// ─── CLIENT : modifier ────────────────────────────────
 router.put('/clients/:id', async (req, res) => {
   try {
     const {

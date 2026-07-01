@@ -4,6 +4,17 @@ import api from '../utils/api';
 
 const empty = { nom: '', prenom: '', email: '', mot_de_passe: '', agence_id: '' };
 
+function validatePassword(pwd) {
+  if (!pwd) return null;
+  if (pwd.length < 8) return 'Minimum 8 caractères requis';
+  if (!/[a-z]/.test(pwd)) return 'Au moins 1 lettre minuscule requise';
+  if (!/[A-Z]/.test(pwd)) return 'Au moins 1 lettre majuscule requise';
+  if (!/[0-9]/.test(pwd)) return 'Au moins 1 chiffre requis';
+  if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pwd))
+    return 'Au moins 1 caractère spécial requis (!@#$%...)';
+  return null;
+}
+
 export default function Agents() {
   const [agents, setAgents]   = useState([]);
   const [agences, setAgences] = useState([]);
@@ -24,19 +35,32 @@ export default function Agents() {
   function openEdit(a)  { setForm({ ...a, mot_de_passe: '' }); setEditing(a.id); setError(''); setModal(true); }
 
   async function save() {
-    setError('');
-    try {
-      if (editing) {
-        await api.put(`/agents/${editing}`, form);
-      } else {
-        await api.post('/agents', form);
-      }
-      setModal(false);
-      load();
-    } catch (e) {
-      setError(e.response?.data?.message || 'Erreur');
-    }
+  setError('');
+
+  // Mot de passe obligatoire pour un nouvel agent
+  if (!editing && !form.mot_de_passe) {
+    setError('Le mot de passe est obligatoire');
+    return;
   }
+
+  // Validation si mot de passe saisi
+  if (form.mot_de_passe) {
+    const pwError = validatePassword(form.mot_de_passe);
+    if (pwError) { setError(pwError); return; }
+  }
+
+  try {
+    if (editing) {
+      await api.put(`/agents/${editing}`, form);
+    } else {
+      await api.post('/agents', form);
+    }
+    setModal(false);
+    load();
+  } catch (e) {
+    setError(e.response?.data?.message || 'Erreur');
+  }
+}
 
   async function del(id) {
     if (!confirm('Supprimer cet agent ?')) return;
@@ -57,8 +81,15 @@ export default function Agents() {
         >+ Nouvel agent</button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm"
+        style={{ overflowX: 'auto',
+          overflowY: 'hidden',
+          WebkitOverflowScrolling: 'touch' }}>
+        <table className="text-sm"
+        style={{
+      minWidth: '900px',
+      width: '100%'
+    }}>
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
               {['Nom complet','Email','Agence','Dossiers créés','Membre depuis','Actions'].map(h => (
@@ -87,7 +118,7 @@ export default function Agents() {
       </div>
 
       {modal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-400  text-gray-800 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
             <h2 className="font-semibold text-gray-800 mb-4">
               {editing ? 'Modifier agent' : 'Nouvel agent'}
@@ -109,6 +140,14 @@ export default function Agents() {
                 type="password" value={form.mot_de_passe}
                 onChange={e => setForm({...form, mot_de_passe: e.target.value})}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"/>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-500">
+                  <p className="font-medium mb-1">Le mot de passe doit contenir :</p>
+                  <p>• Min. 8 caractères</p>
+                  <p>• 1 majuscule (A-Z)</p>
+                  <p>• 1 minuscule (a-z)</p>
+                  <p>• 1 chiffre (0-9)</p>
+                  <p>• 1 caractère spécial (!@#$%...)</p>
+                </div>
               <select value={form.agence_id}
                 onChange={e => setForm({...form, agence_id: e.target.value})}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none">

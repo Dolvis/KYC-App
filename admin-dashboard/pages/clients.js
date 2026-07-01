@@ -133,8 +133,8 @@ export default function Clients() {
       <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '12px' }}>{total} dossier(s) trouvé(s)</p>
 
       {/* Table */}
-      <div style={{ backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+      <div style={{ backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflowX: 'auto', overflowY: 'hidden', width: '100%' }}>
+        <table style={{ minWidth: '1000px', width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
             <tr style={{ backgroundColor: '#F9FAFB', borderBottom: '1px solid #F3F4F6' }}>
               {['N° Client','Nom complet','Téléphone','Agence','Agent','Date','Statut','Action'].map(h => (
